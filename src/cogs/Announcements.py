@@ -3,7 +3,7 @@ from discord.interactions import InteractionResponse
 
 from os import getenv
 
-from src.lib.main import check_access
+from src.lib import check_access
 
 class Announcements:
     def __init__(self, bot: Client):

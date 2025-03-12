@@ -7,7 +7,7 @@ from discord import Interaction, Embed, Forbidden, Member, Client, InteractionRe
 from psycopg import Connection, Cursor
 from psycopg import connect as psycopg
 
-from src.lib.main import check_access, get_sql, log_content
+from src.lib import check_access, get_sql, log_content
 
 tasks = [
     "in",

@@ -8,7 +8,7 @@ from psycopg import connect as psycopg
 
 from json import dumps
 
-from src.lib.main import get_sql, log_content
+from src.lib import get_sql, log_content
 
 class FormTemplate(Modal):
     con: Connection = psycopg(getenv("connection_string"))

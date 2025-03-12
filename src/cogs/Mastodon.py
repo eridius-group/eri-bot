@@ -1,6 +1,6 @@
 from os import getenv
 
-from src.lib.main import get_sql
+from src.lib import get_sql
 
 from discord import Embed, Client
 from discord.ext import tasks

@@ -2,9 +2,8 @@ from enum import Enum
 from os import getenv
 
 from discord import Embed, Interaction, Thread, Forbidden, HTTPException, Member, Client, InteractionResponse
-from discord.ext import commands
 
-from src.lib.main import log_content
+from src.lib import log_content
 
 class TaskPriorities(Enum):
     Low = "🟩"

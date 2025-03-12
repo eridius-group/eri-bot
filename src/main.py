@@ -11,7 +11,7 @@ from src.cogs.Mastodon import Mastodon
 from src.cogs.Tasks import Tasks, TaskPriorities
 from src.cogs.Timeclock import Timeclock, TimeclockTasks
 
-from src.lib.main import get_sql
+from src.lib import get_sql
 
 settings = {}
 clock_cache = {}

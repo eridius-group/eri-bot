@@ -9,7 +9,7 @@ from psycopg import connect as psycopg
 from src.forms.Form3 import Form3
 from src.forms.Form2 import Form2
 
-from src.lib.main import log_content
+from src.lib import log_content
 
 tasks = [
     "2) Damaged Equipment",

@@ -1,7 +1,7 @@
 from discord.ui import TextInput
 from discord import TextStyle
-from src.forms.FormTemplate import FormTemplate
 
+from src.forms.FormTemplate import FormTemplate
 
 class Form3(FormTemplate, title='Form 3 - Contractor Reimbursement'):
     form_name = "Form 3 - Contractor Reimbursement"

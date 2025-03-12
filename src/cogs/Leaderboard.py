@@ -6,7 +6,7 @@ from psycopg import connect as psycopg
 from psycopg.cursor import Cursor
 from psycopg.connection import Connection
 
-from src.lib.main import get_sql
+from src.lib import get_sql
 
 class Leaderboard:
     def __init__(self, bot: Client):
