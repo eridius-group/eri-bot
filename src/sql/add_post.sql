@@ -1,0 +1,1 @@
+INSERT INTO posts (mastodon_id, discord_id) VALUES (%s, %s);

@@ -1,0 +1,1 @@
+SELECT hours FROM timesheet WHERE person_id = %s AND paid = false;

@@ -1,0 +1,1 @@
+SELECT * FROM leaderboard ORDER BY count DESC LIMIT 10;

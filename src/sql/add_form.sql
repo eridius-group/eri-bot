@@ -1,0 +1,1 @@
+INSERT INTO forms (user_id, user_name, form_data) VALUES (%s, %s, %s);

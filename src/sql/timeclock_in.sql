@@ -1,0 +1,1 @@
+INSERT INTO timesheet (task, person_name, person_id, stamp, hours) VALUES (%s, %s, %s, 'IN', 0.0);
