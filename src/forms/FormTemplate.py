@@ -43,4 +43,4 @@ class FormTemplate(Modal):
 
         await log_content(interaction, f"{interaction.user.nick} submitted {self.form_name}.")
 
-        await response.send_message(f'We have logged your Contractor Compensation. Your team lead will review it shortly.', ephemeral=True)
+        await response.send_message(f'We have logged your Form {self.form_name.replace(")", " - ")}. Your team lead will review it shortly.', ephemeral=True)
