@@ -1,0 +1,1 @@
+SELECT task, stamp, hours, paid, created_at FROM timesheet WHERE person_id = %s;

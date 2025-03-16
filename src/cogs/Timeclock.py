@@ -26,15 +26,39 @@ tasks = [
 
 TimeclockTasks = Enum("TimeclockTasks", {task.lower(): task for task in tasks})
 
-def calculate_hours(results):
+def calculate_hours(results, tick: int = 0):
     totals = []
     for record in results:
-        totals.append(record[0])
+        totals.append(record[tick])
 
-    total = int(sum(totals))
+    total = round(sum(totals), 2)
     avg = int(sum(totals) / len(totals))
 
     return total, avg
+
+
+def instance_trim(haystack, needle):
+    first_dash_index = haystack.find(needle)
+    if first_dash_index != -1:
+        return haystack[first_dash_index + 1:]
+    else:
+        return haystack
+
+
+def format_for_table(sheet):
+    for cell in sheet["A1:Z1"]:
+        for cell in cell:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+
+    dims = {}
+    for row in sheet.rows:
+        for cell in row:
+            if cell.value:
+                dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value)))) + 2
+    for col, value in dims.items():
+        sheet.column_dimensions[str(col)].width = value
+
 
 class Timeclock:
     def __init__(self, bot: Client):
@@ -99,6 +123,31 @@ class Timeclock:
 
         await response.send_message(embed=embed, ephemeral=True)
 
+    async def get_yearly(self, interaction: Interaction, response: InteractionResponse, target: Member = None):
+        if target.id != interaction.user.id:
+            if not await check_access(interaction):
+                await response.send_message("You do not have permission to use this command.", ephemeral=True)
+                return
+
+        yearly = get_sql("timeclock_yearly")
+        self.cur.execute(yearly, (target.id,))
+        results = self.cur.fetchall()
+
+        if len(results) == 0:
+            await response.send_message("No timesheet found for this year.", ephemeral=True)
+            return
+
+        yearly, avg = calculate_hours(results, 0)
+        cash, _ = calculate_hours(results, 1)
+
+        embed = Embed(title="Timesheet")
+        embed.description = f"Total Hours Worked: {yearly} hours"
+        embed.description += f"\nAverage Hours Worked: {avg} hours"
+        embed.description += f"\nTotal Paid: ${cash}"
+        embed.set_footer(text="Hours are for this tax year only. For more information, contact your team leader.")
+
+        await response.send_message(embed=embed, ephemeral=True)
+
     async def get_weekly(self, interaction: Interaction, response: InteractionResponse, target: Member = None):
         if target.id != interaction.user.id:
             if not await check_access(interaction):
@@ -113,11 +162,13 @@ class Timeclock:
             await response.send_message("No timesheet found for this week.", ephemeral=True)
             return
 
-        weekly, avg = calculate_hours(results)
+        weekly, avg = calculate_hours(results, 0)
+        cash, _ = calculate_hours(results, 1)
 
         embed = Embed(title="Timesheet")
         embed.description = f"Total Hours Worked: {weekly} hours"
         embed.description += f"\nAverage Hours Worked: {avg} hours"
+        embed.description += f"\nTotal Paid: ${cash}"
         embed.set_footer(text="Hours are for this week only. For more information, contact your team leader.")
 
         await response.send_message(embed=embed, ephemeral=True)
@@ -153,7 +204,7 @@ class Timeclock:
             hours, _ = calculate_hours(results)
 
         pay_sql = get_sql("timeclock_pay")
-        self.cur.execute(pay_sql, (target.id, target.nick, -hours))
+        self.cur.execute(pay_sql, (target.id, target.nick, -hours, amount))
         self.con.commit()
 
 
@@ -207,35 +258,44 @@ class Timeclock:
                 await response.send_message("You do not have permission to use this command.", ephemeral=True)
                 return
 
-        all_sql = get_sql("timeclock_all")
-        self.cur.execute(all_sql, (target.id,))
-        results = self.cur.fetchall()
-
         wb = openpyxl.Workbook()
+
+
+        ### Timesheet Table ###
         wb.worksheets[0].title = "Timesheet"
         ws = wb.active
 
-        ws.append(["Type", "Hours", "Hours Total", "Paid", "Timestamp"])
+        hours_sql = get_sql("timeclock_all_hours")
+        self.cur.execute(hours_sql, (target.id,))
+        results = self.cur.fetchall()
+
+        ws.append(["Task", "Type", "Hours", "Hours Total", "Paid", "Timestamp"])
 
         total = 0
         for record in results:
-            total += record[1]
-            ws.append([record[0], record[1], total, record[2], str(record[3]).strip()])
+            total += record[2]
+            if record[0] != "Payment Issued":
+                ws.append([instance_trim(instance_trim(record[0], " "), "-"), record[1], total, record[2], record[3], str(record[4]).strip()])
 
-        for cell in ws["A1:Z1"]:
-            for cell in cell:
-                cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal="center")
+        format_for_table(ws)
 
-        dims = {}
-        for row in ws.rows:
-            for cell in row:
-                if cell.value:
-                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value)))) + 2
-        for col, value in dims.items():
-            ws.column_dimensions[str(col)].width = value
+        ### Salaries Table ###
+        wb.create_sheet("Salaries")
+        ws = wb["Salaries"]
 
-        name = interaction.user.nick.replace("\"", "") +  ".xlsx"
+        pay_sql = get_sql("timeclock_all_paid")
+        self.cur.execute(pay_sql, (target.id,))
+        results = self.cur.fetchall()
+
+        ws.append(["Amount", "Hours Paid", "Timestamp"])
+
+        for record in results:
+            ws.append([record[0], record[1], record[2]])
+
+        format_for_table(ws)
+
+        ## Save ##
+        name = "workbooks/" + interaction.user.nick.replace("\"", "") +  ".xlsx"
         wb.save(name)
         await response.send_message(file=File(name), ephemeral=True)
 
@@ -263,5 +323,4 @@ class Timeclock:
         elif action == TimeclockTasks["export"]:
             await self.export(interaction, response, user_target)
         else:
-            # await self.get_weekly(interaction, user_target)
-            await self.export(interaction)
+            await self.get_weekly(interaction, user_target)

@@ -1,0 +1,1 @@
+SELECT cash, hours, created_at FROM timesheet WHERE person_id = %s AND stamp = 'PAY';

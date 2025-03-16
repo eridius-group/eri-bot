@@ -3,6 +3,8 @@ from discord import Intents, Client, app_commands, Interaction, Message, Member
 from psycopg import connect as psycopg
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from src.cogs.About import About, AboutOptions
 from src.cogs.Announcements import Announcements
 from src.cogs.Forms import Forms, FormItems
@@ -15,8 +17,6 @@ from src.lib import get_sql
 
 settings = {}
 clock_cache = {}
-
-load_dotenv()
 
 intents = Intents.default()
 intents.message_content = True
@@ -73,7 +73,7 @@ async def resolve(interaction: Interaction, message: str = "No resolve message p
     name="clock",
     description="Get, Set, or Remove details from your timesheet."
 )
-async def clock(interaction: Interaction, action: TimeclockTasks, target: Member = None, hours: int = 0):
+async def clock(interaction: Interaction, action: TimeclockTasks, target: Member = None, hours: int = 0, amount: int = 0):
     await timeclock.clock(interaction, action, target, hours)
 
 @tree.command(
