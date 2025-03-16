@@ -17,6 +17,7 @@ tasks = [
     "in",
     "out",
     "weekly",
+    "yearly",
     "unpaid",
     "pay",
     "add",
@@ -311,7 +312,7 @@ class Timeclock:
         elif action == TimeclockTasks["out"]:
             await self.clock_out(interaction, response)
         elif action == TimeclockTasks["weekly"]:
-            await self.get_weekly(interaction, response)
+            await self.get_weekly(interaction, response, user_target)
         elif action == TimeclockTasks["unpaid"]:
             await self.get_unpaid(interaction, response, user_target)
         elif action == TimeclockTasks["pay"]:
@@ -323,4 +324,4 @@ class Timeclock:
         elif action == TimeclockTasks["export"]:
             await self.export(interaction, response, user_target)
         else:
-            await self.get_weekly(interaction, user_target)
+            await self.get_weekly(interaction, response, user_target)
