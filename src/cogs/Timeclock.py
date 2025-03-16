@@ -1,11 +1,15 @@
+import datetime
 import time
 from enum import Enum
 from os import getenv
 
-from discord import Interaction, Embed, Forbidden, Member, Client, InteractionResponse
+from discord import Interaction, Embed, Forbidden, Member, Client, InteractionResponse, File
 
 from psycopg import Connection, Cursor
 from psycopg import connect as psycopg
+
+import openpyxl
+from openpyxl.styles import Alignment, Font
 
 from src.lib import check_access, get_sql, log_content
 
@@ -16,7 +20,8 @@ tasks = [
     "unpaid",
     "pay",
     "add",
-    "remove"
+    "remove",
+    "export"
 ]
 
 TimeclockTasks = Enum("TimeclockTasks", {task.lower(): task for task in tasks})
@@ -95,9 +100,6 @@ class Timeclock:
         await response.send_message(embed=embed, ephemeral=True)
 
     async def get_weekly(self, interaction: Interaction, response: InteractionResponse, target: Member = None):
-        if not target:
-            target = interaction.user
-
         if target.id != interaction.user.id:
             if not await check_access(interaction):
                 await response.send_message("You do not have permission to use this command.", ephemeral=True)
@@ -121,9 +123,6 @@ class Timeclock:
         await response.send_message(embed=embed, ephemeral=True)
 
     async def get_unpaid(self, interaction: Interaction, response: InteractionResponse, target: Member):
-        if not target:
-            target = interaction.user
-
         if target.id != interaction.user.id:
             if not await check_access(interaction):
                 await response.send_message("You do not have permission to use this command.", ephemeral=True)
@@ -142,10 +141,7 @@ class Timeclock:
 
         await response.send_message(embed=embed, ephemeral=True)
 
-    async def pay(self, interaction: Interaction, response: InteractionResponse, target: Member, hours: int = 0):
-        if not target:
-            target = interaction.user
-
+    async def pay(self, interaction: Interaction, response: InteractionResponse, target: Member, hours: int = 0, amount: int = 0):
         if not await check_access(interaction):
             await response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
@@ -160,6 +156,8 @@ class Timeclock:
         self.cur.execute(pay_sql, (target.id, target.nick, -hours))
         self.con.commit()
 
+
+
         embed = Embed(title="Payment")
         embed.description = f"A payment for {hours} hours has been credited to your account. Expect payment shortly."
         embed.set_footer(text="For more information, contact your team leader.")
@@ -172,9 +170,6 @@ class Timeclock:
             return
 
     async def add(self, interaction: Interaction, response: InteractionResponse, target: Member, hours: int):
-        if not target:
-            target = interaction.user
-
         if not await check_access(interaction):
             await response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
@@ -191,9 +186,6 @@ class Timeclock:
         await response.send_message(embed=embed)
 
     async def remove(self, interaction: Interaction, response: InteractionResponse, target: Member, hours: int):
-        if not target:
-            target = interaction.user
-
         if not await check_access(interaction):
             await response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
@@ -209,7 +201,45 @@ class Timeclock:
         embed.description = f"{hours} hours have been removed from {target.nick}'s timesheet."
         await response.send_message(embed=embed)
 
-    async def clock(self, interaction: Interaction, action: TimeclockTasks = TimeclockTasks["weekly"], target: Member = None, hours: int = 0):
+    async def export(self, interaction: Interaction, response: InteractionResponse, target: Member):
+        if target.id != interaction.user.id:
+            if not await check_access(interaction):
+                await response.send_message("You do not have permission to use this command.", ephemeral=True)
+                return
+
+        all_sql = get_sql("timeclock_all")
+        self.cur.execute(all_sql, (target.id,))
+        results = self.cur.fetchall()
+
+        wb = openpyxl.Workbook()
+        wb.worksheets[0].title = "Timesheet"
+        ws = wb.active
+
+        ws.append(["Type", "Hours", "Hours Total", "Paid", "Timestamp"])
+
+        total = 0
+        for record in results:
+            total += record[1]
+            ws.append([record[0], record[1], total, record[2], str(record[3]).strip()])
+
+        for cell in ws["A1:Z1"]:
+            for cell in cell:
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal="center")
+
+        dims = {}
+        for row in ws.rows:
+            for cell in row:
+                if cell.value:
+                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value)))) + 2
+        for col, value in dims.items():
+            ws.column_dimensions[str(col)].width = value
+
+        name = interaction.user.nick.replace("\"", "") +  ".xlsx"
+        wb.save(name)
+        await response.send_message(file=File(name), ephemeral=True)
+
+    async def clock(self, interaction: Interaction, action: TimeclockTasks = TimeclockTasks["weekly"], target: Member = None, hours: int = 0, amount: int = 0):
         user_target = target
         if not target:
             user_target = interaction.user
@@ -225,10 +255,13 @@ class Timeclock:
         elif action == TimeclockTasks["unpaid"]:
             await self.get_unpaid(interaction, response, user_target)
         elif action == TimeclockTasks["pay"]:
-            await self.pay(interaction, response, user_target, hours)
+            await self.pay(interaction, response, user_target, hours, amount)
         elif action == TimeclockTasks["add"]:
             await self.add(interaction, response, user_target, hours)
         elif action == TimeclockTasks["remove"]:
             await self.remove(interaction, response, user_target, hours)
+        elif action == TimeclockTasks["export"]:
+            await self.export(interaction, response, user_target)
         else:
-            await self.get_weekly(interaction, user_target)
+            # await self.get_weekly(interaction, user_target)
+            await self.export(interaction)
