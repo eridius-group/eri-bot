@@ -27,7 +27,7 @@ cur = con.cursor()
 
 announcement = Announcements(client)
 formClass = Forms(client)
-leaderboard = Leaderboard(client)
+leaderboard_object = Leaderboard(client)
 task_object = Tasks(client)
 timeclock = Timeclock(client)
 mastodon = Mastodon(client)
@@ -53,7 +53,7 @@ async def file(interaction: Interaction, form: FormItems):
     description="Shows this month's leaderboard"
 )
 async def leaderboard(interaction: Interaction):
-    await leaderboard.leaderboard(interaction)
+    await leaderboard_object.leaderboard(interaction)
 
 @tree.command(
     name="task",

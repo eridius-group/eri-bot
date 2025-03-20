@@ -40,10 +40,10 @@ class About:
 
         await response.send_message(embed=embed)
 
-    async def entry(self, interaction: Interaction, req_type: AboutOptions = "company"):
-        if req_type == "company":
+    async def entry(self, interaction: Interaction, req_type: AboutOptions = AboutOptions["company"]):
+        if req_type == AboutOptions["company"]:
             await self.company_dialog(interaction)
-        elif req_type == "eri":
+        elif req_type == AboutOptions["eri"]:
             await self.eri(interaction)
         else:
             await self.company_dialog(interaction)

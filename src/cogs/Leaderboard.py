@@ -27,8 +27,8 @@ class Leaderboard:
 
         leaderboard_rows = enumerate(self.cur.fetchall())
         for i, row in leaderboard_rows:
-            user = await self.bot.fetch_user(row[0])
-            content += "{}. {} - {} messages\n".format(i + 1, user.name, row[1])
+            user = await self.bot.fetch_user(row[1])
+            content += "{}. {} - {} messages\n".format(i + 1, user.name, row[2])
 
         embed.description = content
 

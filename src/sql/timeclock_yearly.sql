@@ -1,6 +1,6 @@
 SELECT cash, hours
 FROM timesheet
-WHERE created_at > CASE
+WHERE person_id = %s AND created_at > CASE
     WHEN EXTRACT(MONTH FROM CURRENT_DATE) <= 2 THEN
         MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE) - 1, 1, 31)
     ELSE

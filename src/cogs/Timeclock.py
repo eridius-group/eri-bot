@@ -163,8 +163,10 @@ class Timeclock:
             await response.send_message("No timesheet found for this week.", ephemeral=True)
             return
 
-        weekly, avg = calculate_hours(results, 0)
-        cash, _ = calculate_hours(results, 1)
+        print(results)
+
+        weekly, avg = calculate_hours(results, 1)
+        cash, _ = calculate_hours(results, 0)
 
         embed = Embed(title="Timesheet")
         embed.description = f"Total Hours Worked: {weekly} hours"
@@ -232,7 +234,7 @@ class Timeclock:
         correct_sql = get_sql("timeclock_correct")
 
         await self.sql_wrapper(embed, interaction, correct_sql,
-                               (interaction.channel.name, interaction.user.nick, interaction.user.id, hours))
+                               (interaction.channel.name, target.nick, target.id, hours))
 
         embed.description = f"{hours} hours have been added to {target.nick}'s timesheet."
         await response.send_message(embed=embed)
@@ -248,7 +250,7 @@ class Timeclock:
         correct_sql = get_sql("timeclock_correct")
 
         await self.sql_wrapper(embed, interaction, correct_sql,
-                               (interaction.channel.name, interaction.user.nick, interaction.user.id, -hours))
+                               (interaction.channel.name, target.nick, target.id, -hours))
 
         embed.description = f"{hours} hours have been removed from {target.nick}'s timesheet."
         await response.send_message(embed=embed)
@@ -313,6 +315,8 @@ class Timeclock:
             await self.clock_out(interaction, response)
         elif action == TimeclockTasks["weekly"]:
             await self.get_weekly(interaction, response, user_target)
+        elif action == TimeclockTasks["yearly"]:
+            await self.get_yearly(interaction, response, user_target)
         elif action == TimeclockTasks["unpaid"]:
             await self.get_unpaid(interaction, response, user_target)
         elif action == TimeclockTasks["pay"]:
